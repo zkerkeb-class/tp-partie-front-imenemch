@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { fetchPokemonDetails } from '../services/pokeapi';
 import { PokemonDetails, TYPE_COLORS } from '../types';
+import { normalizePokemonName } from '../utils/pokemonHelpers';
 import { Zap, Activity } from 'lucide-react';
 
 interface PokemonCardProps {
   name: string;
+  cardImage?: string;
   onClick: (details: PokemonDetails) => void;
   onBattleSelect: (details: PokemonDetails) => void;
   isInBattleSelection?: boolean;
@@ -20,17 +22,109 @@ const STAT_ATTACK_NAMES: Record<string, string> = {
   'speed': 'Quick Attack',
 };
 
-const PokemonCard: React.FC<PokemonCardProps> = ({ name, onClick, onBattleSelect, isInBattleSelection, isSelectedForBattle }) => {
+const PokemonCard: React.FC<PokemonCardProps> = ({ name, cardImage, onClick, onBattleSelect, isInBattleSelection, isSelectedForBattle }) => {
   const [details, setDetails] = useState<PokemonDetails | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
+  // Only fetch details when clicked, not automatically
+  const handleClick = async () => {
+    // If we already have details, use them
+    if (details) {
+      isInBattleSelection ? onBattleSelect(details) : onClick(details);
+      return;
+    }
+
+    // Try to fetch details when clicked
+    setIsLoadingDetails(true);
+    const normalizedName = normalizePokemonName(name);
+    const data = await fetchPokemonDetails(normalizedName);
+    setIsLoadingDetails(false);
+
+    if (data) {
+      setDetails(data);
+      isInBattleSelection ? onBattleSelect(data) : onClick(data);
+    } else {
+      // Show toast when card is not a Pokemon (Trainer, Energy, etc.)
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    }
+  };
+
+  // If we have a real TCG card image, display it directly
+  if (cardImage) {
+    return (
+      <div
+        className={`relative group cursor-pointer transition-all duration-300 ${isSelectedForBattle ? 'ring-4 ring-yellow-400 scale-105' : 'hover:-translate-y-2 hover:scale-105'}`}
+        onClick={handleClick}
+      >
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white rounded-xl border-2 border-black">
+            <Activity className="text-black animate-spin" size={32} />
+          </div>
+        )}
+        {imageError ? (
+          <div className="w-full h-auto rounded-xl shadow-lg border-2 border-black bg-gray-100 flex items-center justify-center p-8">
+            <div className="text-center">
+              <p className="font-bold text-sm">{name}</p>
+              <p className="text-xs text-gray-500 mt-2">Image unavailable</p>
+            </div>
+          </div>
+        ) : (
+          <img
+            src={cardImage}
+            alt={name}
+            className={`w-full h-auto rounded-xl shadow-lg transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              console.error(`Failed to load image for ${name}: ${cardImage}`);
+              setImageError(true);
+            }}
+            loading="lazy"
+          />
+        )}
+        {/* Loading overlay when fetching details */}
+        {isLoadingDetails && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+            <Activity className="text-white animate-spin" size={32} />
+          </div>
+        )}
+        {/* Battle Selection Indicator */}
+        {isInBattleSelection && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className={`w-8 h-8 rounded-full border-2 border-black flex items-center justify-center shadow-lg transition-all ${isSelectedForBattle ? 'bg-yellow-400 scale-110' : 'bg-white'}`}>
+              {isSelectedForBattle && <Zap size={18} className="text-black" fill="currentColor" />}
+            </div>
+          </div>
+        )}
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-in fade-in zoom-in duration-200">
+            <div className="bg-red-500 text-white px-4 py-3 rounded-lg border-2 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] max-w-xs">
+              <p className="text-sm font-bold text-center">"{name}" is not a Pokemon!</p>
+              <p className="text-xs text-center mt-1 opacity-90">This is a Trainer or Energy card</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback: fetch details on mount for non-TCG cards
   useEffect(() => {
-    let isMounted = true;
-    fetchPokemonDetails(name).then(data => {
-      if (isMounted) setDetails(data);
-    });
-    return () => { isMounted = false; };
-  }, [name]);
+    if (!cardImage) {
+      let isMounted = true;
+      const normalizedName = normalizePokemonName(name);
+      fetchPokemonDetails(normalizedName).then(data => {
+        if (isMounted) setDetails(data);
+      });
+      return () => { isMounted = false; };
+    }
+  }, [name, cardImage]);
 
+  // Fallback to old TCG-style card if no image provided
   if (!details) {
     return (
       <div className="bg-white draw-border rounded-lg p-4 h-80 flex items-center justify-center draw-shadow">
@@ -124,6 +218,15 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ name, onClick, onBattleSelect
         <div className="absolute top-2 right-2 z-10">
           <div className={`w-6 h-6 rounded-full border-2 border-black flex items-center justify-center ${isSelectedForBattle ? 'bg-yellow-400' : 'bg-white'}`}>
             {isSelectedForBattle && <Zap size={14} className="text-black" fill="currentColor" />}
+          </div>
+        </div>
+      )}
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-in fade-in zoom-in duration-200">
+          <div className="bg-red-500 text-white px-4 py-3 rounded-lg border-2 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] max-w-xs">
+            <p className="text-sm font-bold text-center">"{name}" is not a Pokemon!</p>
+            <p className="text-xs text-center mt-1 opacity-90">This is a Trainer or Energy card</p>
           </div>
         </div>
       )}

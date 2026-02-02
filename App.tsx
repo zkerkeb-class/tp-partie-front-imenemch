@@ -1,18 +1,24 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { PokemonListResult, PokemonDetails } from './types';
-import { fetchPokemonList } from './services/pokeapi';
+import { PokemonDetails } from './types';
 import PokemonCard from './components/PokemonCard';
 import PokemonDetail from './components/PokemonDetail';
 import BattleArena from './components/BattleArena';
-import { Search, Swords, BarChart2, Check } from 'lucide-react';
+import { Search, Swords, BarChart2, Check, ChevronDown } from 'lucide-react';
+import { fetchSeries, fetchSetsBySeries, fetchSetDetails, getCardImageUrl, TCGSeries, TCGSet, TCGCard } from './services/tcgdex';
+import { normalizePokemonName, isPokemonCard } from './utils/pokemonHelpers';
 
 function App() {
-  const [pokemonList, setPokemonList] = useState<PokemonListResult[]>([]);
-  const [filteredList, setFilteredList] = useState<PokemonListResult[]>([]);
-  const [offset, setOffset] = useState(0);
+  const [cardList, setCardList] = useState<TCGCard[]>([]);
+  const [filteredList, setFilteredList] = useState<TCGCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
+  // TCGdex State
+  const [series, setSeries] = useState<TCGSeries[]>([]);
+  const [sets, setSets] = useState<TCGSet[]>([]);
+  const [selectedSeries, setSelectedSeries] = useState<string>('');
+  const [selectedSet, setSelectedSet] = useState<string>('');
+
   // Modal State
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonDetails | null>(null);
 
@@ -24,24 +30,68 @@ function App() {
 
   const initialLoadDone = useRef(false);
 
-  // Load initial Data
+  // Load series on mount
   useEffect(() => {
     if (!initialLoadDone.current) {
-        loadMorePokemon();
+        loadSeries();
         initialLoadDone.current = true;
     }
   }, []);
 
+  // Load sets when series changes
   useEffect(() => {
-    const results = pokemonList.filter(p => p.name.includes(searchTerm.toLowerCase()));
-    setFilteredList(results);
-  }, [searchTerm, pokemonList]);
+    if (selectedSeries) {
+      loadSets(selectedSeries);
+    }
+  }, [selectedSeries]);
 
-  const loadMorePokemon = async () => {
+  // Load cards when set changes
+  useEffect(() => {
+    if (selectedSet) {
+      loadCards(selectedSet);
+    }
+  }, [selectedSet]);
+
+  useEffect(() => {
+    const results = cardList.filter(c => {
+      // Filter by search term
+      const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase());
+      // Only show Pokemon cards (hide Trainer, Energy, etc.)
+      return matchesSearch && isPokemonCard(c.category);
+    });
+    setFilteredList(results);
+  }, [searchTerm, cardList]);
+
+  const loadSeries = async () => {
     setLoading(true);
-    const newPokemon = await fetchPokemonList(50, offset);
-    setPokemonList(prev => [...prev, ...newPokemon]);
-    setOffset(prev => prev + 50);
+    const allSeries = await fetchSeries();
+    setSeries(allSeries);
+    // Auto-select first series
+    if (allSeries.length > 0) {
+      setSelectedSeries(allSeries[0].id);
+    }
+    setLoading(false);
+  };
+
+  const loadSets = async (seriesId: string) => {
+    setLoading(true);
+    const seriesSets = await fetchSetsBySeries(seriesId);
+    setSets(seriesSets);
+    // Auto-select first set
+    if (seriesSets.length > 0) {
+      setSelectedSet(seriesSets[0].id);
+    }
+    setLoading(false);
+  };
+
+  const loadCards = async (setId: string) => {
+    setLoading(true);
+    const setDetails = await fetchSetDetails(setId);
+    if (setDetails && setDetails.cards) {
+      // Debug: Log categories to see what we're getting
+      console.log('Card categories:', setDetails.cards.map(c => ({ name: c.name, category: c.category })));
+      setCardList(setDetails.cards);
+    }
     setLoading(false);
   };
 
@@ -82,7 +132,8 @@ function App() {
   };
 
   const isSelectedForComparison = (name: string) => {
-      return fighter1?.name === name || fighter2?.name === name;
+      const normalizedCardName = normalizePokemonName(name);
+      return fighter1?.name.toLowerCase() === normalizedCardName || fighter2?.name.toLowerCase() === normalizedCardName;
   };
 
   // The banner should show if we are explicitly in selection mode OR if we have at least one fighter selected
@@ -101,7 +152,34 @@ function App() {
             <h1 className="text-3xl font-black tracking-tighter uppercase">Poke<span className="text-yellow-500 text-stroke-black" style={{WebkitTextStroke: '1px black'}}>Stats</span></h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
+             {/* Series Selector */}
+             <div className="relative hidden md:block">
+              <select
+                value={selectedSeries}
+                onChange={(e) => setSelectedSeries(e.target.value)}
+                className="bg-white border-2 border-black rounded-md px-3 py-2 text-sm font-bold appearance-none pr-8 hover:bg-yellow-50 transition-all cursor-pointer"
+              >
+                {series.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" size={16} />
+             </div>
+
+             {/* Set Selector */}
+             <div className="relative hidden md:block">
+              <select
+                value={selectedSet}
+                onChange={(e) => setSelectedSet(e.target.value)}
+                className="bg-white border-2 border-black rounded-md px-3 py-2 text-sm font-bold appearance-none pr-8 hover:bg-yellow-50 transition-all cursor-pointer"
+              >
+                {sets.map((set) => (
+                  <option key={set.id} value={set.id}>{set.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" size={16} />
+             </div>
              {/* Compare Button */}
              <button 
                 onClick={() => setShowComparison(true)}
@@ -180,29 +258,23 @@ function App() {
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredList.map((p, idx) => (
-                <PokemonCard 
-                    key={`${p.name}-${idx}`} 
-                    name={p.name} 
-                    onClick={setSelectedPokemon} 
+            {filteredList.map((card, idx) => (
+                <PokemonCard
+                    key={`${card.id}-${idx}`}
+                    name={card.name}
+                    cardImage={getCardImageUrl(card.image)}
+                    onClick={setSelectedPokemon}
                     onBattleSelect={handleComparisonSelect}
-                    isInBattleSelection={isSelectionMode || !!fighter1 || !!fighter2} 
-                    isSelectedForBattle={isSelectedForComparison(p.name)}
+                    isInBattleSelection={isSelectionMode || !!fighter1 || !!fighter2}
+                    isSelectedForBattle={isSelectedForComparison(card.name)}
                 />
             ))}
             </div>
         )}
 
-        {/* Load More */}
-        {!searchTerm && (
+        {loading && (
             <div className="flex justify-center mt-12">
-            <button 
-                onClick={loadMorePokemon} 
-                disabled={loading}
-                className="px-8 py-3 bg-white text-black font-black uppercase tracking-wider border-2 border-black rounded-lg draw-shadow hover:draw-shadow-hover active:draw-shadow-active transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {loading ? 'Loading...' : 'Load More'}
-            </button>
+              <div className="text-lg font-bold text-gray-600">Loading cards...</div>
             </div>
         )}
       </main>

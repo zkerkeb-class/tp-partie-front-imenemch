@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PokemonDetails, TYPE_COLORS } from '../types';
-import { X, Ruler, Weight, Play, Download } from 'lucide-react';
+import { X, Ruler, Weight, Play } from 'lucide-react';
 import StatChart from './StatChart';
-import PokemonCardGenerator from './PokemonCardGenerator';
 
 interface PokemonDetailProps {
   pokemon: PokemonDetails;
@@ -12,7 +11,6 @@ interface PokemonDetailProps {
 const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemon, onClose }) => {
   const mainType = pokemon.types[0].type.name;
   const mainColorClass = TYPE_COLORS[mainType] || 'bg-slate-500';
-  const [showCardGenerator, setShowCardGenerator] = useState(false);
 
   const playCry = () => {
     if (pokemon.cries?.latest) {
@@ -71,9 +69,6 @@ const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemon, onClose }) => {
              <button onClick={playCry} className="mt-4 flex items-center justify-center gap-2 text-lg font-bold bg-white text-black border-2 border-black px-6 py-2 rounded-full draw-shadow-sm hover:draw-shadow transition-all active:translate-y-1 active:shadow-none w-full">
                 <Play size={20} fill="currentColor" /> Play Cry
             </button>
-             <button onClick={() => setShowCardGenerator(true)} className="mt-4 flex items-center justify-center gap-2 text-lg font-bold bg-white text-black border-2 border-black px-6 py-2 rounded-full draw-shadow-sm hover:draw-shadow transition-all active:translate-y-1 active:shadow-none w-full">
-                <Download size={20} /> Download Card
-            </button>
         </div>
 
         {/* Right Column: Data */}
@@ -130,13 +125,6 @@ const PokemonDetail: React.FC<PokemonDetailProps> = ({ pokemon, onClose }) => {
             </div>
         </div>
       </div>
-
-      {showCardGenerator && (
-        <PokemonCardGenerator
-          pokemon={pokemon}
-          onClose={() => setShowCardGenerator(false)}
-        />
-      )}
     </div>
   );
 };
