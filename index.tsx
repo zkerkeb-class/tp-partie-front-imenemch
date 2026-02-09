@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { FavoritesProvider } from './contexts/FavoritesContext';
 import App from './App';
 
 const rootElement = document.getElementById('root');
@@ -10,6 +12,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <FavoritesProvider>
+        <App />
+      </FavoritesProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

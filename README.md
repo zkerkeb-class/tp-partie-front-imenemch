@@ -1,226 +1,249 @@
-# PokeStats - Pokemon TCG Card Viewer & Battle Simulator
+# PokeStats - Pokemon Database & Stats Comparator
+# LIENNN YOUTUBEEEEEEE
+https://www.youtube.com/watch?v=LL_8Sb36opY
 
-A modern, interactive web application for browsing Pokemon Trading Card Game (TCG) cards and comparing Pokemon stats in a battle arena.
 
-> **📚 For technical documentation, architecture details, and sequence diagrams, see [TECHNICAL_DOCS.md](./TECHNICAL_DOCS.md)**
+
+
+
+
+
+
+
+
+
+
+A full-stack CRUD application for browsing, managing, and comparing Pokemon, built with React, TypeScript, and an Express/MongoDB backend.
+
+> **For detailed technical documentation, architecture, and data flows, see [TECHNICAL_DOCS.md](./TECHNICAL_DOCS.md)**
 
 ## Features
 
-### 🎴 TCG Card Browser
-- Browse real Pokemon TCG cards from different series and sets
-- High-quality card images powered by [TCGdex API](https://www.tcgdex.net/)
-- Search functionality to quickly find specific Pokemon
-- Automatic filtering to show only Pokemon cards (hides Trainer, Energy, and Stadium cards)
+### Pokemon Browser
+- Paginated card grid displaying all Pokemon from the database (20 per page)
+- TCG-style card design with type-colored backgrounds, image, HP, and attack preview
+- Search by name (English, French, Japanese, Chinese) with 400ms debounce
+- Click any card to navigate to its detail page
 
-### 📊 Pokemon Stats Viewer
-- Click any card to view detailed Pokemon information
-- Stats visualization with interactive radar charts
-- Type information with color-coded badges
-- Abilities and characteristics display
-- Pokemon cries audio playback
+### Full CRUD Operations
+- **Create**: Add a new Pokemon with names (4 languages), types, base stats, and optional image URL
+- **Read**: Browse the paginated list or view individual Pokemon detail pages
+- **Update**: Edit any Pokemon's data in-place from the detail page
+- **Delete**: Remove a Pokemon with a confirmation modal
 
-### ⚔️ Battle Arena
-- Compare two Pokemon side-by-side
-- Visual stat comparison with color-coded bars
-- Radar chart overlay to see stat differences
-- Predict battle outcomes based on stats
-- Type advantage/disadvantage system
+### Favorites System
+- Toggle favorites via the heart icon on any card or detail page
+- Favorites persist across sessions using `localStorage`
+- Dedicated favorites view on the list page (heart toggle next to search bar)
+- Batch-fetches favorited Pokemon from the backend in a single request
 
-### 🎯 Smart Card Handling
-- **Unified Pokemon Cards**: All variants of a Pokemon (ex, V, VMAX, VSTAR, GX, etc.) show the same base Pokemon stats
-  - Example: "Pikachu ex", "Pikachu V", and "Pikachu VMAX" all display regular Pikachu's stats
-  - This ensures consistent battle comparisons across different card variants
-- **Category Filtering**: Automatically filters out non-Pokemon cards
-  - Only shows Pokemon cards in the grid
-  - Hides Trainer, Energy, Stadium, and other card types
+### Type & Stat Filters (Poke-Filter)
+- Collapsible filter panel with 18 type toggle buttons (multi-select)
+- Min/max range inputs for all 6 base stats (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed)
+- Filters are server-side with full pagination support
+- Active filter count displayed as a badge on the filter button
+- Reset button to clear all filters at once
+- Search and filters are mutually exclusive; favorites mode disables filters
 
-## Technical Implementation
+### Stats Comparator
+- Dedicated `/compare` page accessible from the navbar
+- Pick two Pokemon via a searchable modal (instant client-side filtering of all Pokemon)
+- Side-by-side stat comparison with dual horizontal bars (blue vs red)
+- Winning stat highlighted per row
+- Base Stat Total (BST) comparison with winner badge or draw indicator
+- Overlaid radar chart showing both Pokemon's stat profiles on a single chart
+- Reset and re-pick at any time
 
-### Architecture
-```
-pokestats_with_battlemode/
-├── components/          # React components
-│   ├── PokemonCard.tsx         # Card display with TCG images
-│   ├── PokemonDetail.tsx       # Detailed Pokemon view modal
-│   ├── BattleArena.tsx         # Battle comparison interface
-│   ├── StatChart.tsx           # Recharts radar chart
-│   ├── TradingCard.tsx         # TCG-style card generator
-│   └── PokemonCardGenerator.tsx # Card download functionality
-├── services/            # API integration
-│   ├── tcgdex.ts               # TCGdex API for card images
-│   └── pokeapi.ts              # PokeAPI for Pokemon data
-├── types.ts            # TypeScript interfaces
-└── App.tsx             # Main application component
-```
+## Tech Stack
 
-### Key Technologies
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Recharts** - Data visualization
-- **Lucide React** - Icon system
-- **Tailwind CSS** - Styling (via classes)
-- **html2canvas** - Card image generation
+| Layer | Technology |
+|-------|------------|
+| UI Framework | React 19 |
+| Language | TypeScript 5.8 |
+| Build Tool | Vite 6 |
+| Routing | React Router 7 |
+| Charts | Recharts 3 |
+| Icons | Lucide React |
+| Styling | Tailwind CSS (CDN) + custom CSS |
+| Font | Patrick Hand (Google Fonts) |
+| Backend | Express + MongoDB (separate project) |
 
-### APIs Used
-1. **TCGdex API** (`https://api.tcgdex.net/v2/en`)
-   - Fetches Pokemon TCG series, sets, and card images
-   - Provides high-quality card artwork
-   - Returns card categories (Pokemon, Trainer, Energy)
-
-2. **PokeAPI** (`https://pokeapi.co/api/v2`)
-   - Fetches Pokemon stats, types, and abilities
-   - Provides official Pokemon artwork
-   - Returns Pokemon cries audio
-
-### Name Normalization System
-The app uses a smart name normalization system to handle TCG card variants:
-
-```typescript
-// Removes TCG-specific suffixes
-normalizePokemonName("Charizard ex") → "charizard"
-normalizePokemonName("Pikachu VMAX") → "pikachu"
-normalizePokemonName("Mewtwo GX") → "mewtwo"
-```
-
-**Supported suffixes:**
-- ex, EX
-- V, VMAX, VSTAR
-- GX
-- Radiant, Prime
-- LEGEND, BREAK
-- Tag Team variants
-
-This ensures all card variants fetch the same base Pokemon data for consistency.
-
-### Card Filtering
-Cards are filtered in real-time:
-- **Search filter**: Matches Pokemon names (case-insensitive)
-- **Category filter**: Shows only Pokemon cards, hides:
-  - Trainer cards (Supporter, Item, Stadium, Tool)
-  - Energy cards (Basic, Special)
-  - Other special card types
-
-## User Interface
-
-### Navigation Bar
-- **Series Selector**: Choose Pokemon TCG series (e.g., Scarlet & Violet, Sword & Shield)
-- **Set Selector**: Choose specific sets within a series
-- **Battle Button**: Opens battle arena (shows count of selected Pokemon)
-- **Search Bar**: Filter cards by name
-
-### Card Grid
-- Responsive grid layout (1-4 columns based on screen size)
-- Real TCG card images with lazy loading
-- Click any card to view details
-- In battle mode, click cards to select fighters
-
-### Battle Selection Mode
-- Activated when selecting Pokemon for battle
-- Yellow banner shows selected Pokemon
-- Visual indicators on cards
-- "Clear" and "Done" buttons for easy management
-- Auto-opens battle arena when 2 Pokemon are selected
-
-### Battle Arena
-- Split-screen layout comparing two Pokemon
-- Stat bars with color coding (higher values in green)
-- Overlay radar chart showing stat profiles
-- "Reset" to clear selection
-- "Select New" to choose different Pokemon
-
-## Installation
+## Getting Started
 
 ### Prerequisites
-- Node.js 16+ and npm
+- Node.js 18+
+- MongoDB running on `localhost:27017`
+- Backend server (`Pokestats_with_battlemode_back`) running on port 3000
 
-### Setup
+### Installation
+
 ```bash
-# Clone the repository
-git clone <repository-url>
+# Install frontend dependencies
 cd pokestats_with_battlemode
-
-# Install dependencies
 npm install
 
-# Start development server
+# Start the development server (default port 5173)
 npm run dev
 
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+# In a separate terminal, start the backend
+cd Pokestats_with_battlemode_back
+npm install
+node index.js
 ```
 
-## Development
+### Available Scripts
 
-### Project Structure
-- `App.tsx` - Main app logic, state management, TCG data loading
-- `components/` - Reusable React components
-- `services/` - API integration functions
-- `types.ts` - TypeScript type definitions
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server with hot reload |
+| `npm run build` | Production build to `dist/` |
+| `npm run preview` | Preview the production build locally |
 
-### Key State Management
+## API Connection
+
+The frontend communicates with the backend through a Vite dev server proxy:
+
+```
+Frontend (localhost:5173)  --->  /api/*  --->  Backend (localhost:3000)
+```
+
+The `/api` prefix is stripped by the proxy, so `/api/pokemon` becomes `http://localhost:3000/pokemon`.
+
+### Endpoints Used
+
+| Method | Frontend Path | Backend Route | Purpose |
+|--------|--------------|---------------|---------|
+| GET | `/api/pokemon?page=1&limit=20` | `/pokemon` | Paginated Pokemon list |
+| GET | `/api/pokemon/search?name=pikachu` | `/pokemon/search` | Search by name |
+| GET | `/api/pokemon/by-ids?ids=1,4,7` | `/pokemon/by-ids` | Batch fetch by IDs (favorites) |
+| GET | `/api/pokemon/filter?types=Fire&minAttack=80` | `/pokemon/filter` | Filter by type and stats |
+| GET | `/api/pokemon/list-all` | `/pokemon/list-all` | Lightweight list for comparator picker |
+| GET | `/api/pokemon/:id` | `/pokemon/:id` | Single Pokemon by ID |
+| POST | `/api/pokemon` | `/pokemon` | Create new Pokemon |
+| PUT | `/api/pokemon/:id` | `/pokemon/:id` | Update existing Pokemon |
+| DELETE | `/api/pokemon/:id` | `/pokemon/:id` | Delete a Pokemon |
+
+## Project Structure
+
+```
+pokestats_with_battlemode/
+├── index.html              # Entry HTML with Tailwind CDN, custom CSS, font
+├── index.tsx               # React root with BrowserRouter + FavoritesProvider
+├── App.tsx                 # Navbar + route definitions
+├── types.ts                # TypeScript interfaces & TYPE_COLORS constant
+├── vite.config.ts          # Vite config with /api proxy
+├── tsconfig.json           # TypeScript config
+├── package.json            # Dependencies & scripts
+│
+├── components/
+│   ├── PokemonListPage.tsx     # Main list with search, pagination, favorites, filters
+│   ├── PokemonDetailPage.tsx   # Detail view with stats, chart, edit/delete/favorite
+│   ├── AddPokemonPage.tsx      # Create new Pokemon page
+│   ├── PokemonCard.tsx         # TCG-style card component with favorite heart
+│   ├── PokemonForm.tsx         # Reusable form for create & edit
+│   ├── StatChart.tsx           # Recharts radar chart for a single Pokemon
+│   ├── DeleteConfirmModal.tsx  # Confirmation modal for delete action
+│   ├── PokeFilter.tsx          # Type & stat range filter panel
+│   ├── ComparatorPage.tsx      # Side-by-side stats comparator page
+│   └── PokemonPicker.tsx       # Searchable Pokemon selection modal
+│
+├── contexts/
+│   └── FavoritesContext.tsx    # Favorites state (Set<number>) + localStorage
+│
+├── services/
+│   └── pokemonApi.ts           # All API functions (9 total)
+│
+└── utils/                      # Utility helpers
+```
+
+## User Interactions
+
+### Browsing
+1. Open the app -> the Pokemon list loads (page 1, 20 cards)
+2. Scroll through the grid, click Previous/Next for pagination
+3. Type in the search bar -> results update after 400ms debounce
+4. Click any card -> navigates to `/pokemon/:id` detail page
+
+### Favorites
+1. Click the heart icon on any card or on the detail page -> toggles favorite
+2. Heart appears filled red when favorited, gray outline when not
+3. On the list page, click the heart button next to the search bar -> shows only favorites
+4. Favorites persist across browser sessions (stored in `localStorage` as `pokestats-favorites`)
+
+### Filtering
+1. Click the sliders icon next to the search bar -> opens the filter panel
+2. Click type buttons to select/deselect types (multiple allowed)
+3. Enter min/max values for any stat
+4. The list updates automatically with each change (server-side filtering, paginated)
+5. A red badge on the sliders icon shows the count of active filters
+6. Click "Reset Filters" to clear everything
+
+### Creating a Pokemon
+1. Click "Add Pokemon" in the navbar -> navigates to `/pokemon/new`
+2. Fill in names, select types, set base stats, optionally add image URL
+3. Submit -> redirects to the new Pokemon's detail page
+
+### Editing & Deleting
+1. On a detail page, click the pencil icon -> edit form appears inline
+2. Modify fields and click "Update Pokemon"
+3. Click the trash icon -> confirmation modal appears
+4. Confirm -> Pokemon is deleted and user returns to the list
+
+### Comparing
+1. Click "Compare" in the navbar -> navigates to `/compare`
+2. Click "+" on the left or right slot -> Pokemon picker modal opens
+3. Search or scroll to find a Pokemon, click to select
+4. Once both slots are filled, the comparison section appears:
+   - 6 dual-bar rows showing each stat side by side
+   - BST total with winner/draw indicator
+   - Overlaid radar chart with both Pokemon's profiles
+5. Click on a filled slot to swap it, or click "Reset" to clear both
+
+## Styling
+
+The app uses a hand-drawn notebook aesthetic:
+- **Font**: Patrick Hand (Google Fonts) for a handwritten feel
+- **Background**: Cream paper (`#fffdf5`) with dotted grid pattern
+- **Borders**: Solid 2px black borders on all interactive elements
+- **Shadows**: Custom `draw-shadow` (4px offset) and `draw-shadow-sm` (2px offset) classes
+- **Colors**: Yellow (`#fbbf24`) as primary accent, type-specific colors for badges and backgrounds
+- **Interactions**: `active:translate-y-0.5` press effect, hover color transitions
+
+## Data Model
+
+### Pokemon (full)
 ```typescript
-// TCG Data
-- series: Available TCG series
-- sets: Sets in selected series
-- cardList: Cards in selected set
-- filteredList: Filtered cards (search + category)
-
-// Modal State
-- selectedPokemon: Currently viewed Pokemon details
-
-// Battle State
-- fighter1, fighter2: Selected Pokemon for comparison
-- showComparison: Battle arena visibility
-- isSelectionMode: Battle selection active
+{
+  _id?: string;          // MongoDB ObjectId
+  id: number;            // Sequential integer (1, 2, 3...)
+  name: {
+    english: string;
+    japanese: string;
+    chinese: string;
+    french: string;
+  };
+  type: string[];        // e.g. ["Fire", "Flying"]
+  base: {
+    HP: number;
+    Attack: number;
+    Defense: number;
+    SpecialAttack: number;
+    SpecialDefense: number;
+    Speed: number;
+  };
+  image: string;         // URL to Pokemon image
+}
 ```
 
-### Styling Approach
-- Custom CSS classes with "draw" prefix for retro/TCG aesthetic
-- Tailwind-style utility classes
-- Responsive design with mobile-first approach
-- Custom shadows and borders for card effects
-
-## Recent Updates
-
-### Version 2.0 - Smart Card Handling
-1. **Name Normalization**: All TCG card variants now map to base Pokemon
-2. **Category Filtering**: Non-Pokemon cards are automatically hidden
-3. **Unified Modals**: Same Pokemon shows same stats regardless of card variant
-4. **Battle Consistency**: All variants of a Pokemon can be compared equally
-
-### Code Cleanup
-- Removed temporary files
-- Updated .gitignore for temporary files
-- Organized service layer
-- Improved type definitions
-
-## Usage Tips
-
-1. **Browse Cards**: Select a series and set to load cards
-2. **View Details**: Click any card to see detailed stats
-3. **Compare Pokemon**:
-   - Click the battle icon (⚔️)
-   - Select two Pokemon from the grid
-   - Battle arena opens automatically
-4. **Search**: Use the search bar to find specific Pokemon quickly
-
-## Future Enhancements
-- Save favorite Pokemon
-- More detailed battle mechanics
-- Type effectiveness calculations
-- Move sets and abilities in battle view
-- Card collection tracker
-- Advanced filtering (by type, HP, etc.)
-
-## Credits
-- [TCGdex](https://www.tcgdex.net/) - Pokemon TCG card data and images
-- [PokeAPI](https://pokeapi.co/) - Pokemon game data and stats
-- Icons by [Lucide](https://lucide.dev/)
-- Built with React, TypeScript, and Vite
+### PokemonMini (lightweight, for comparator picker)
+```typescript
+{
+  id: number;
+  name: { english: string };
+  type: string[];
+  image: string;
+}
+```
 
 ## License
-This project is for educational purposes. Pokemon and Pokemon TCG are trademarks of Nintendo, Game Freak, and The Pokemon Company.
+This project is for educational purposes. Pokemon is a trademark of Nintendo, Game Freak, and The Pokemon Company.
