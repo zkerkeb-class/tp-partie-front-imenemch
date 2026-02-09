@@ -1,13 +1,57 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pokemon_groupe_1</title>
-  </head>
+    <title>PokeStats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Patrick Hand', cursive;
+        background-color: #fffdf5; /* Cream paper */
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+        color: #1a1a1a;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f0ea;
+        border-left: 2px solid #000;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #000;
+        border: 2px solid #f1f0ea;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #333;
+      }
+      
+      .draw-shadow {
+        box-shadow: 4px 4px 0px 0px #000000;
+      }
+      .draw-shadow-sm {
+        box-shadow: 2px 2px 0px 0px #000000;
+      }
+      .draw-shadow-hover:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px 0px #000000;
+      }
+      .draw-shadow-active:active {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0px 0px #000000;
+      }
+      .draw-border {
+        border: 2px solid #000000;
+      }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
