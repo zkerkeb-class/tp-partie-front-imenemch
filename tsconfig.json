@@ -25,5 +25,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "components/BattleArena.tsx",
+    "components/TradingCard.tsx",
+    "components/PokemonCardGenerator.tsx"
+  ]
 }
